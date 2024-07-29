@@ -28,10 +28,10 @@ app.get("/", (req, res, next) => {
 app.use(notFound);
 app.use(errorHandler);
 
-// testing db
+// testing db -- logs latest registy
 const logDB = async () => {
   const tryDB = await pool.query("SELECT * FROM users");
-  console.log(tryDB.rows);
+  console.log(tryDB.rows[tryDB.rows.length - 1]);
 };
 logDB();
 

@@ -1,4 +1,7 @@
-// for authorizing user
+import pool from "../config/db.js";
+import bcrypt from "bcryptjs";
+
+// for authorizing user - enter the app - cookie stuff
 // POST/api/user/auth
 // access - public
 const authUser = async (req, res) => {
@@ -16,9 +19,29 @@ const logOutUser = async (req, res) => {
 // POST/api/user
 // access - public
 const regUser = async (req, res) => {
-  console.log(req.body); // returns { username: 'john', email: 'fox', password: 'heee', timestamp: 'heee' }
+  // console.log(req.body); // returns { username: 'john', email: 'fox', password: 'heee', timestamp: 'heee' }
   const { username, email, password, timestamp } = req.body;
-  res.json({ message: "register user" });
+  try {
+    const { rows } = await pool.query(
+      "SELECT username FROM users WHERE username = $1 ",
+      [username]
+    );
+    if (rows[0]) {
+      res.json({ message: "user exists" });
+    } else {
+      bcrypt.hash(password, 10, async (err, hashedPassword) => {
+        if (err) {
+          return alert("Error in hashing password");
+        }
+        await pool.query(
+          "INSERT INTO users (username,email, password,timestamp) VALUES ($1, $2,$3,$4)",
+          [username, email, hashedPassword, new Date()]
+        );
+      });
+    }
+  } catch (error) {
+    console.log(error.message);
+  }
 };
 
 // for getting user data
