@@ -1,7 +1,9 @@
 import express from "express";
 import userRoutes from "./routes/userRoutes.js";
-import { fileURLToPath } from "url";
 import path from "path";
+import cookieParser from "cookie-parser";
+import { fileURLToPath } from "url";
+
 // db stuff
 import pool from "./config/db.js";
 // import error stuff
@@ -18,6 +20,7 @@ console.log(`### pathname is: ${__filename}`);
 // must be before other
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.use("/api/users", userRoutes);
 app.get("/", (req, res, next) => {
