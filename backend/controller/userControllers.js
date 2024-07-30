@@ -8,7 +8,7 @@ import { genToken } from "../utils/generateToken.js";
 const authUser = async (req, res, next) => {
   // res.json({ message: "auth user" });
   const { username, email, password } = req.body;
-
+  // console.log("req.user: ", req.user);
   try {
     const user = await pool.query(
       "SELECT * FROM users WHERE email = $1 AND username= $2 ",
@@ -20,7 +20,8 @@ const authUser = async (req, res, next) => {
       return next(error);
     }
     // check password if passwowrd entry is correct
-    const userObj = user.rows[0];
+    const userObj = user.rows[0]; // return object {user_id:xxx,username:"zzz"}
+    // console.log(userObj);
     const match = await bcrypt.compare(password, userObj.password);
     if (!match) {
       const error = new Error("Password is incorrect");
@@ -73,7 +74,7 @@ const regUser = async (req, res, next) => {
 // POST/api/user/logout
 // access - public
 const logOutUser = async (req, res) => {
-  res.cooke("jwt", "", {
+  res.cookie("jwt", "", {
     httpOnly: true,
     expires: new Date(0)
   });
@@ -84,14 +85,34 @@ const logOutUser = async (req, res) => {
 // GET/api/user
 // access - private
 const getUser = async (req, res) => {
-  res.json({ message: "get user" });
+  // res.json(req.user);
+  try {
+    const user = await pool.query(
+      "SELECT * FROM users WHERE email = $1 AND username= $2 ",
+      [req.user.email, req.user.username]
+    );
+    res.status(200).json(user.rows[0]);
+  } catch (error) {}
 };
 
 // for updating user data
 // PUT/api/user
 // access - private
 const updateUser = async (req, res) => {
-  res.json({ message: "update user" });
+  // refactor - find req.user first then if unable to find 404 user not found
+  const { password } = req.body;
+  const { username, email } = req.user;
+  try {
+    await pool.query(
+      "UPDATE users SET password=$1,timestamp=$4 WHERE username=$2 AND email=$3",
+      [password, username, email, new Date()]
+    );
+    res.status(201).json(req.body);
+  } catch (error) {
+    const err = new Error("Unable to update password");
+    err.status = 400;
+    return next(err);
+  }
 };
 
 export { authUser, logOutUser, regUser, getUser, updateUser };
